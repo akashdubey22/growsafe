@@ -1,0 +1,57 @@
+[
+ {
+  "docstatus": 0,
+  "doctype": "Custom Script",
+  "dt": "Sales Invoice",
+  "modified": "2018-07-30 16:50:54.788342",
+  "name": "Sales Invoice-Client",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "script": "/* Event : branch selection */\ncur_frm.add_fetch('branch', 'warehouse', 'ware_house')\nfrappe.ui.form.on(\"Sales Invoice\", {\n\tbranch: function(frm){\n\t\t$.each(frm.doc.items || [], function(i, d) {\n\t\t\td.warehouse = frm.doc.warehouse;\n\t\t});\n\t\trefresh_field(\"warehouse\");\n\t\trefresh_field(\"items\");\n\t},\n\tware_house: function(frm){\n\t/*\n\t\tfrappe.call({\n    \t\t\tmethod:\"frappe.client.get_value\",\n    \t\t\targs: {\n        \t\t\tdoctype:\"Dynamic Link\",\n        \t\t\tfilters: {\n            \t\t\t\tlink_name:frm.doc.ware_house\n        \t\t\t},\n        \t\t\tfieldname:[\"name\"]\n    \t\t\t\t}, \n    \t\t\t\tcallback: function(r) { \n        \t\t\tconsole.log(r);\n\n        \t\t\t\t// set the returned value in a field\n        \t\t\t\tcur_frm.set_value(company_address, r.message);\n    \t\t\t\t}\n\t\t})\n*/\n\t}\n});\n\nfrappe.ui.form.on(\"Sales Invoice Item\", \"item_code\", function(frm, cdt, cdn) {\n\t$.each(frm.doc.items || [], function(i, d) {\n\t\t\td.warehouse = frm.doc.ware_house;\n\t});\n\trefresh_field(\"items\");\n});"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Custom Script",
+  "dt": "Batch",
+  "modified": "2018-06-22 13:46:56.976435",
+  "name": "Batch-Client",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "script": "frappe.ui.form.on(\"Batch\", {\n\tmfg_date: function(frm){\n\t\tfrappe.call({\n           \t method: \"frappe.client.get\",\n            \targs: {\n\t\t\tdoctype:\"Item\",\n                \tname: frm.doc.item\n           \t},\n           \t callback(r) {\n                \tif (r.message) {\n\t\t\tvar date= new Date(frm.doc.mfg_date)\n\t\t\tvar newdate = new Date(date);\n\t\t\tnewdate.setDate(date.getDate() + parseInt(r.message.warranty_period) );\n\t\t\tfrm.doc.expiry_date =  newdate;\n\t\t\tfrm.refresh_field(\"expiry_date\")\n\t\t\t}\n\t\t}\n\t})\n\t}\n});"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Custom Script",
+  "dt": "Work Order",
+  "modified": "2018-06-23 11:32:27.980954",
+  "name": "Production Order-Client",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "script": "/* Event : branch selection */\ncur_frm.add_fetch('branch', 'warehouse', 'fg_warehouse')\nfrappe.ui.form.on(\"Production Order\", {\n\tbranch: function(frm){\n\t\t$.each(frm.doc.required_items|| [], function(i, d) {\n\t\t\td.source_warehouse = frm.doc.fg_warehouse;\n\t\t});\n\t\trefresh_field(\"fg_warehouse\");\n\t\trefresh_field(\"required_items\");\n\t}\n});\n\nfrappe.ui.form.on(\"Production Order Item\", \"item_code\", function(frm, cdt, cdn) {\n\t$.each(frm.doc.required_items|| [], function(i, d) {\n\t\t\td.source_warehouse= frm.doc.fg_warehouse;\n\t});\n\trefresh_field(\"required_items\");\n});"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Custom Script",
+  "dt": "Stock Entry",
+  "modified": "2018-07-03 22:20:57.179002",
+  "name": "Stock Entry-Client",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "script": "frappe.ui.form.on(\"Stock Entry\", \"onload\", function(frm) {\n    frm.set_query('batch_no', 'items', function(doc, cdt, cdn) {\n\t\t\tvar item = locals[cdt][cdn];\n\t\t\tif(!item.item_code) {\n\t\t\t\tfrappe.throw(__(\"Please enter Item Code to get Batch Number\"));\n\t\t\t} else {\n\t\t\t\tif (in_list([\"Material Transfer for Manufacture\", \"Manufacture\", \"Repack\", \"Subcontract\"], doc.purpose)) {\n\t\t\t\t\tvar filters = {\n\t\t\t\t\t\t'item_code': item.item_code,\n\t\t\t\t\t\t'posting_date': '3025/12/31'\n\t\t\t\t\t}\n\t\t\t\t} else {\n\t\t\t\t\tvar filters = {\n\t\t\t\t\t\t'item_code': item.item_code\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\tif(item.s_warehouse) filters[\"warehouse\"] = item.s_warehouse;\n\t\t\t\treturn {\n\t\t\t\t\tquery : \"erpnext.controllers.queries.get_batch_no\",\n\t\t\t\t\tfilters: filters\n\t\t\t\t}\n\t\t\t}\n\t\t});\n});"
+ },
+ {
+  "docstatus": 0,
+  "doctype": "Custom Script",
+  "dt": "Sales Order",
+  "modified": "2020-05-24 16:32:10.355338",
+  "name": "Sales Order-Client",
+  "parent": null,
+  "parentfield": null,
+  "parenttype": null,
+  "script": "frappe.ui.form.on(\"Sales Order\",{\n        \"customer\" : function (frm){\n\tif(frm.doc.customer){        \n\tfrappe.call({\n\t\t\"method\": \"growsafe.growsafe.overdue.getOverdue\",\n\t\targs: {\n\t\t\tcustomer: frm.doc.customer\n\t\t},\n\t\tcallback:function(r){\n\t\tfrm.set_value(\"has_overdue_invoice\",r.message)\n\t\t\n;}\n});\n}\n}\n});\n\nfrappe.ui.form.on(\"Sales Order\", \"before_submit\", function(frm) {\n\tif (frm.doc.has_overdue_invoice == 1 && frm.doc.allow_submit == 0) {\n\tfrappe.throw(\"Customer has overdue invoice, you are not allowed to place order for this customer.\");\n\treturn false;\n} });\n"
+ }
+]
